@@ -1,18 +1,124 @@
 from django.db import models
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)    # краткое имя
+
+    def __str__(self):
+        return self.slug
+
+
+class PrivateAccount(models.Model):
+    account = models.CharField(max_length=50, unique=True)
+
+
+class Project(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+
+    account = models.OneToOneField(
+        PrivateAccount,
+        on_delete=models.CASCADE,
+        related_name='project'
+    )
+
+    def __str__(self):
+        return self.slug
+
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.slug
+
+
+class WarePhoto(models.Model):
+    photo_blob = models.BinaryField()
+
+    def __str__(self):
+        return f'{self.ware.name} photo'
+
+
 class Ware(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     inventory = models.CharField(max_length=50, unique=True, null=True)
-    serial = models.CharField(max_length=50, null=True)
+    serial = models.CharField(max_length=50, blank=True)
     quantity = models.FloatField(default=1.)
 
     is_active = models.BooleanField(default=True)
 
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.CASCADE,
+        related_name='wares'
+    )
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='wares'
+    )
+
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='wares'
+    )
+
+    photo = models.OneToOneField(
+        WarePhoto,
+        on_delete=models.CASCADE,
+        related_name='ware'
+    )
+
+    account = models.CharField(max_length=100, null=True)
+    account_date = models.DateTimeField(null=True)
+    name_in_account = models.CharField(max_length=200)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+# корпус
+class Housing(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Room(models.Model):
+    name = models.CharField(max_length=50)
+
+    housing = models.ForeignKey(
+        Housing,
+        on_delete=models.CASCADE,
+        related_name='rooms'
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class Location(models.Model):
+    name = models.CharField(max_length=50)
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.CASCADE,
+        related_name='locations'
+    )
 
     def __str__(self):
         return self.name
