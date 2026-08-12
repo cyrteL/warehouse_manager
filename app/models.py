@@ -37,6 +37,12 @@ class Supplier(models.Model):
         return self.slug
 
 
+class Status(models.TextChoices):
+    ACTIVE = 'active', 'На балансе'
+    NON_ACTIVE = 'non active', 'Списано'
+    TO_BE_WRITTEN_OFF = 'to be written off', 'К списанию'
+
+
 class Ware(models.Model):
     name = models.CharField(max_length=200, unique=True)
     description = models.TextField(blank=True)
@@ -45,7 +51,7 @@ class Ware(models.Model):
     serial = models.CharField(max_length=50, blank=True)
     quantity = models.FloatField(default=1.)
 
-    is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
 
     supplier = models.ForeignKey(
         Supplier,
