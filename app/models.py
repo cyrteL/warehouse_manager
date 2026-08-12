@@ -37,13 +37,6 @@ class Supplier(models.Model):
         return self.slug
 
 
-class WarePhoto(models.Model):
-    photo_blob = models.BinaryField()
-
-    def __str__(self):
-        return f'{self.ware.name} photo'
-
-
 class Ware(models.Model):
     name = models.CharField(max_length=200, unique=True)
     description = models.TextField(blank=True)
@@ -73,12 +66,6 @@ class Ware(models.Model):
         related_name='wares'
     )
 
-    photo = models.OneToOneField(
-        WarePhoto,
-        on_delete=models.CASCADE,
-        related_name='ware'
-    )
-
     account = models.CharField(max_length=100, null=True)
     account_date = models.DateTimeField(null=True)
     name_in_account = models.CharField(max_length=200)
@@ -88,6 +75,20 @@ class Ware(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WarePhoto(models.Model):
+    ware = models.ForeignKey(
+        Ware,
+        on_delete=models.CASCADE,
+        related_name='photos'  # У одного товара может быть список photos
+    )
+
+    image = models.ImageField(upload_to='wares/photos/')
+    is_main = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'Photo: {self.ware.name}'
 
 
 # корпус
