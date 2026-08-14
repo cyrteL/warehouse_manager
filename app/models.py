@@ -65,7 +65,6 @@ class Ware(models.Model):
         related_name='wares'
     )
 
-
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
