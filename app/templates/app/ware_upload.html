@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Загрузка из Excel{% endblock %}
+
+{% block content %}
+<div class="search-container mx-auto" style="max-width: 600px;">
+    <h1 class="h4 mb-4"><i class="fas fa-file-excel me-2 text-success"></i>Загрузка описи из Excel</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.file.errors }}
+        <div class="mb-3">
+            <label class="form-label">{{ form.file.label }}</label>
+            {{ form.file }}
+            <div class="form-text">{{ form.file.help_text }}</div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-upload me-2"></i>Загрузить
+        </button>
+        <a href="{% url 'app:list' %}" class="btn btn-outline-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}
