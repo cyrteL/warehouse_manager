@@ -94,7 +94,7 @@ class WareExcelUploadView(View):
                                 'name': row.get(fnames.NAME, '')[:255],
                                 'quantity': row.get(fnames.QUANTITY, 0),
                                 'price': row.get(fnames.PRICE, 0.0),
-                                'location': ''
+                                'location': None
                             }
                         )
 

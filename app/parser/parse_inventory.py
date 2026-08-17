@@ -124,7 +124,7 @@ def parse_inventory_file(file_path: str) -> Generator[Dict[str, Any], None, None
 
     # Парсим каждый блок
     for header_row, data_start_row, data_end_row in blocks:
-        yield from parse_block(df, header_row + 1, data_start_row, data_end_row)
+        yield from parse_block(df, header_row, data_start_row + 1, data_end_row)
 
 
 # Пример использования
