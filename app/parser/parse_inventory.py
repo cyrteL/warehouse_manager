@@ -1,7 +1,7 @@
 import pandas as pd
 from typing import Generator, Dict, Any, List, Tuple
 
-import fields_names as fnames
+from app.parser import fields_names as fnames
 
 
 def find_blocks(df: pd.DataFrame) -> List[Tuple[int, int]]:

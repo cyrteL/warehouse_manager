@@ -1,4 +1,6 @@
 import logging
+from dataclasses import dataclass, field
+
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
@@ -8,9 +10,19 @@ from django.views.generic import ListView, UpdateView
 
 from .forms import WareExcelUploadForm
 from .models import Ware
+from .parser.parse_inventory import parse_inventory_file
+from app.parser import fields_names as fnames
+
 #from .parser.excel_in import parse_inventory_xlsx #задатки под будущий парсер
 
+
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ParseResult:
+    rows: list[dict] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 class WareListView(ListView):
@@ -38,8 +50,6 @@ class WareUpdateView(UpdateView):
         return response
 
 
-#Это будет выгрузка с экселя, но парсера пока нет
-'''
 class WareExcelUploadView(View):
     template_name = 'app/ware_upload.html'
 
@@ -51,39 +61,63 @@ class WareExcelUploadView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form}, status=400)
 
-        result = parse_inventory_xlsx(form.cleaned_data['file'])
+        try:
+            # Парсим файл
+            rows = list(parse_inventory_file(form.cleaned_data['file']))
 
-        if not result.rows and result.errors:
-            for err in result.errors[:20]:
-                messages.error(request, err)
+            if not rows:
+                messages.warning(request, 'Файл успешно прочитан, но данные не найдены.')
+                return render(request, self.template_name, {'form': form})
+
+        except Exception as exc:
+            logger.exception('Ware Excel import failed')
+            messages.error(request, f'Ошибка при чтении файла: {exc}')
             return render(request, self.template_name, {'form': form}, status=400)
 
         created, updated = 0, 0
+        errors = []
+
         try:
             with transaction.atomic():
-                for row in result.rows:
-                    obj, was_created = Ware.objects.update_or_create(
-                        inventory=row.inventory,
-                        defaults={
-                            'name': row.name,
-                            'quantity': row.quantity,
-                            'price': row.price,
-                            'accounting_code': row.accounting_code,
-                            'source_department': row.source_department,
-                        },
-                    )
-                    created += was_created
-                    updated += not was_created
+                for row in rows:
+                    try:
+                        # Ищем по инвентарному номеру
+                        inventory = row.get(fnames.INVENTORY)
+                        if not inventory:
+                            errors.append(f'Пропущена строка {row.get("row_num")}: нет инвентарного номера')
+                            continue
+
+                        # Получаем или создаём запись
+                        obj, was_created = Ware.objects.update_or_create(
+                            inventory=inventory,
+                            defaults={
+                                'name': row.get(fnames.NAME, '')[:255],
+                                'quantity': row.get(fnames.QUANTITY, 0),
+                                'price': row.get(fnames.PRICE, 0.0),
+                                'location': ''
+                            }
+                        )
+
+                        if was_created:
+                            created += 1
+                        else:
+                            updated += 1
+
+                    except Exception as e:
+                        errors.append(f'Ошибка в строке {row.get("row_num")}: {str(e)}')
+                        logger.exception(f'Ошибка при импорте строки {row.get("row_num")}')
+
         except Exception as exc:
             logger.exception('Ware Excel import failed')
             messages.error(request, f'Импорт прерван из-за ошибки: {exc}')
             return render(request, self.template_name, {'form': form}, status=500)
 
         messages.success(request, f'Импорт завершён: добавлено {created}, обновлено {updated}.')
-        if result.errors:
-            messages.warning(request, f'Пропущено строк с ошибками: {len(result.errors)}.')
-            for err in result.errors[:20]:
+
+        if errors:
+            messages.warning(request, f'Пропущено строк с ошибками: {len(errors)}.')
+            for err in errors[:10]:
                 messages.warning(request, err)
 
         return redirect('app:list')
-'''
+
