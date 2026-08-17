@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Редактирование изделия{% endblock %}
+
+{% block content %}
+<div class="search-container mx-auto" style="max-width: 600px;">
+    <h1 class="h4 mb-4"><i class="fas fa-edit me-2 text-primary"></i>{{ object.name }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for f in form %}
+        <div class="mb-3">
+            <label class="form-label">{{ f.label }}</label>
+            {{ f }}
+            {% if f.errors %}<div class="text-danger small">{{ f.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Сохранить
+        </button>
+        <a href="{% url 'app:list' %}" class="btn btn-outline-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

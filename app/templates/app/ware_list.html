@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Изделия{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="fas fa-boxes me-2 text-primary"></i>Изделия</h1>
+</div>
+
+{% if wares %}
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Наименование</th>
+                <th>Инв. номер</th>
+                <th>Кол-во</th>
+                <th>Статус</th>
+                <th>Категория</th>
+                <th>Проект</th>
+                <th>Локация</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ware in wares %}
+            <tr>
+                <td>{{ ware.name }}</td>
+                <td>{{ ware.inventory|default:"—" }}</td>
+                <td>{{ ware.quantity }}</td>
+                <td>
+                    <span class="status-badge {% if ware.status == 'active' %}status-completed{% else %}status-pending{% endif %}">
+                        {{ ware.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ ware.category|default:"—" }}</td>
+                <td>{{ ware.project|default:"—" }}</td>
+                <td>{{ ware.location|default:"—" }}</td>
+                <td>
+                    <a href="{% url 'app:update' ware.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav>
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперёд</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-inbox"></i>
+    <p>Изделий пока нет. Загрузите опись из Excel, чтобы начать.</p>
+</div>
+{% endif %}
+{% endblock %}
