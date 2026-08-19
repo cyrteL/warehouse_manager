@@ -94,7 +94,6 @@ class Ware(models.Model):
         blank=True
     )
 
-
     location = models.ForeignKey(
         'Location',
         on_delete=models.SET_NULL,
@@ -102,6 +101,14 @@ class Ware(models.Model):
         null=True,
         blank=True
     )
+
+    @property
+    def housing(self):
+        return self.location.room.housing if self.location else None
+
+    @property
+    def room(self):
+        return self.location.room if self.location else None
 
     accounting_code = models.CharField(max_length=100, blank=True)
     account_date = models.DateField(null=True, blank=True)

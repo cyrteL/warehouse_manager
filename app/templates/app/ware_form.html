@@ -1,3 +1,4 @@
+<!-- app/templates/app/ware_form.html -->
 {% extends "base.html" %}
 {% block title %}Редактирование изделия{% endblock %}
 
@@ -7,17 +8,129 @@
 
     <form method="post">
         {% csrf_token %}
-        {% for f in form %}
+
+        <!-- Стандартные поля -->
         <div class="mb-3">
-            <label class="form-label">{{ f.label }}</label>
-            {{ f }}
-            {% if f.errors %}<div class="text-danger small">{{ f.errors }}</div>{% endif %}
+            <label class="form-label">{{ form.status.label }}</label>
+            {{ form.status }}
         </div>
-        {% endfor %}
+        <div class="mb-3">
+            <label class="form-label">{{ form.category.label }}</label>
+            {{ form.category }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.project.label }}</label>
+            {{ form.project }}
+        </div>
+
+        <!-- Поля для локации -->
+        <div class="mb-3">
+            <label class="form-label">{{ form.housing.label }}</label>
+            {{ form.housing }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.room.label }}</label>
+            {{ form.room }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.location.label }}</label>
+            {{ form.location }}
+        </div>
+
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save me-2"></i>Сохранить
         </button>
         <a href="{% url 'app:list' %}" class="btn btn-outline-secondary">Отмена</a>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const housingSelect = document.getElementById('id_housing');
+    const roomSelect = document.getElementById('id_room');
+    const locationSelect = document.getElementById('id_location');
+
+    // Сохраняем начальные значения, если они есть
+    const initialHousing = housingSelect.value;
+    const initialRoom = roomSelect.value;
+
+    // Функция загрузки комнат
+    function loadRooms(housingId, selectedRoomId = null) {
+        if (!housingId) {
+            roomSelect.innerHTML = '<option value="">---------</option>';
+            locationSelect.innerHTML = '<option value="">---------</option>';
+            return;
+        }
+
+        fetch(`/get-rooms-by-housing/${housingId}/`)
+            .then(response => response.json())
+            .then(data => {
+                roomSelect.innerHTML = '<option value="">---------</option>';
+                data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    if (selectedRoomId && room.id == selectedRoomId) {
+                        option.selected = true;
+                    }
+                    roomSelect.appendChild(option);
+                });
+
+                // Если есть выбранная комната, загружаем локации
+                const roomId = roomSelect.value;
+                if (roomId) {
+                    loadLocations(roomId);
+                } else {
+                    locationSelect.innerHTML = '<option value="">---------</option>';
+                }
+            });
+    }
+
+    // Функция загрузки локаций
+    function loadLocations(roomId, selectedLocationId = null) {
+        if (!roomId) {
+            locationSelect.innerHTML = '<option value="">---------</option>';
+            return;
+        }
+
+        fetch(`/get-locations-by-room/${roomId}/`)
+            .then(response => response.json())
+            .then(data => {
+                locationSelect.innerHTML = '<option value="">---------</option>';
+                data.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.id;
+                    option.textContent = location.name;
+                    if (selectedLocationId && location.id == selectedLocationId) {
+                        option.selected = true;
+                    }
+                    locationSelect.appendChild(option);
+                });
+            });
+    }
+
+    // Обработчик изменения корпуса
+    housingSelect.addEventListener('change', function() {
+        loadRooms(this.value);
+    });
+
+    // Обработчик изменения комнаты
+    roomSelect.addEventListener('change', function() {
+        loadLocations(this.value);
+    });
+
+    // Если при загрузке страницы уже выбран корпус — подгружаем комнаты
+    if (initialHousing) {
+        // Передаём ID выбранной комнаты, если она есть
+        const currentRoom = document.getElementById('id_room').value;
+        loadRooms(initialHousing, currentRoom);
+    }
+
+    // Если при загрузке страницы уже выбрана комната — подгружаем локации
+    if (initialRoom) {
+        const currentLocation = document.getElementById('id_location').value;
+        loadLocations(initialRoom, currentLocation);
+    }
+});
+</script>
 {% endblock %}

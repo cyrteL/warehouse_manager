@@ -3,13 +3,14 @@ from dataclasses import dataclass, field
 
 from django.contrib import messages
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, UpdateView
 
-from .forms import WareExcelUploadForm
-from .models import Ware
+from .forms import WareExcelUploadForm, WareForm
+from .models import Ware, Room, Location
 from .parser.parse_inventory import parse_inventory_file
 from app.parser import fields_names as fnames
 
@@ -38,10 +39,9 @@ class WareListView(ListView):
         )
 
 
-
 class WareUpdateView(UpdateView):
     model = Ware
-    fields = ['status', 'category', 'project', 'location']
+    form_class = WareForm
     success_url = reverse_lazy('app:list')
 
     def form_valid(self, form):
@@ -120,4 +120,16 @@ class WareExcelUploadView(View):
                 messages.warning(request, err)
 
         return redirect('app:list')
+
+
+def get_rooms_by_housing(request, housing_id):
+    """Возвращает комнаты для выбранного корпуса"""
+    rooms = Room.objects.filter(housing_id=housing_id).values('id', 'name')
+    return JsonResponse(list(rooms), safe=False)
+
+
+def get_locations_by_room(request, room_id):
+    """Возвращает локации для выбранной комнаты"""
+    locations = Location.objects.filter(room_id=room_id).values('id', 'name')
+    return JsonResponse(list(locations), safe=False)
 
